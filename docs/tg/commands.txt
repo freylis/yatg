@@ -1,0 +1,3 @@
+help - Bot description + usage examples
+search - Search file by name (regexp supported)
+psearch - Like command `/s` but returns public link
