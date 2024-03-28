@@ -18,6 +18,28 @@ class Settings:
         path = os.path.abspath(path)
         return path
 
+    @property
+    def tgbot_token(self):
+        """
+        Token by path `tgbot / token`
+        """
+        tkn = self._get_tgbot_option('token')
+        return tkn
+
+    @property
+    def tgbot_name(self):
+        """
+        Get telegram bot name
+        """
+        return self._get_tgbot_option('name')
+
+    @property
+    def tgbot_url(self):
+        """
+        Get url to telegram-api
+        """
+        return self._get_tgbot_option('api_url')
+
     def get_option(self, *keys):
         """
         Get option by path
@@ -56,3 +78,9 @@ class Settings:
         with open(self.path, 'rb') as file:
             full = yaml.safe_load(file)
         return full
+
+    def _get_tgbot_option(self, key):
+        """
+        Get option from section `tgbot`
+        """
+        return self.get_option('tgbot', key)
