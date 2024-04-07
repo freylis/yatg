@@ -1,4 +1,8 @@
+import logging
+
 from yatg.tg_bot.bot import TgBot
+
+logger = logging.getLogger('yatg')
 
 
 def get_updates():
@@ -7,6 +11,7 @@ def get_updates():
     """
     bot = TgBot.from_config()
     updates = bot.get_updates()
+    logger.info(f'Got {len(updates)} updates')
     for upd in updates:
         upd.save()
 

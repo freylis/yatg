@@ -1,3 +1,5 @@
+import json
+
 from yatg.storage import DB
 
 
@@ -15,7 +17,7 @@ class User:
     def _get_user_data(self):
         existing_user = self.db.select_one(
             """
-            SELECT "id", "name"
+            SELECT "id", "name", "plugin_data"
             FROM "User"
             WHERE "name" = ?
             """,
@@ -33,4 +35,5 @@ class User:
         return {
             'id': existing_user[0],
             'username': existing_user[1],
+            'plugin_data': json.loads(existing_user[2] or '{}')
         }

@@ -1,6 +1,7 @@
 import sqlite3
 
 from yatg.settings import Settings
+from yatg.utils import logger
 
 
 class DB:
@@ -26,6 +27,10 @@ class DB:
         recs = self.select(query, *args)
         return recs[0] if recs else None
 
+    def select_field(self, query, *args):
+        rec = self.select_one(query, *args)
+        return rec[0] if rec else None
+
     def execute(self, query, *args):
         """
         Execute any query
@@ -35,12 +40,15 @@ class DB:
         """
         connection = sqlite3.connect(self.settings.db_path)
         cursor = connection.cursor()
+        logger.debug(f'[dbq] {query}; args={args}')
         cursor.execute(query, args)
         recs = cursor.fetchall()
+        logger.debug(f'[dbr] rows: {len(recs)}')
         connection.commit()
         return recs
 
     def initialize_db(self):
+        logger.info('Initialize db')
         self.execute(
             """
             CREATE TABLE IF NOT EXISTS "Options" (
@@ -54,7 +62,8 @@ class DB:
             """
             CREATE TABLE IF NOT EXISTS "User" (
                 id INTEGER PRIMARY KEY,
-                name TEXT NOT NULL UNIQUE
+                name TEXT NOT NULL UNIQUE,
+                plugin_data TEXT
             )
             """
         )
@@ -62,6 +71,8 @@ class DB:
             """
             CREATE TABLE IF NOT EXISTS "Queue" (
                 id INTEGER PRIMARY KEY,
+                content_type INTEGER NOT NULL,
+                external_id TEXT NOT NULL,
                 user_id INTEGER NOT NULL,
                 body TEXT NOT NULL,
                 status INTEGER NOT NULL,
@@ -69,5 +80,11 @@ class DB:
                 FOREIGN KEY (user_id)
                     REFERENCES User(id)
             )
+            """
+        )
+        self.execute(
+            """
+            CREATE UNIQUE INDEX IF NOT EXISTS queue_ctype_extid_uid
+            ON Queue(content_type, external_id, user_id)
             """
         )

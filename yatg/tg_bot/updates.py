@@ -1,40 +1,63 @@
 import json
 
 from yatg.storage import DB
-from yatg.storage.users import User
+from yatg.utils import logger
+from yatg.tg_bot import plugins
+from yatg.tg_bot.queue import Queue
 
 
-class Update:
-    STATUS_NEW = 1
-    STATUS_DONE = 2
-    STATUS_UNKNOWN_COMMAND = 3
-    STATUS_ERROR = 4
-
-    def __init__(self, data):
-        self.data = data
-        self.db = DB()
+class Update(Queue):
+    CONTENT_TYPE = 1
 
     @property
-    def username(self):
-        return self.data['message']['chat']['username']
+    def external_id(self):
+        """
+        Get id from tg data
+        """
+        return str(self.data['update_id'])
 
     @property
-    def user(self):
-        user = User(self.username)
-        return user
+    def command_text(self):
+        return self.data['message']['text']
+
+    def execute(self):
+        """
+        Execute this update
+        """
+        logger.info(f'Execute command {self.command_text!r}')
+        plugin_cls = plugins.get_plugin(self.command_text)
+        plugin = plugin_cls()
+        plugin.activate(self)
 
     def save(self):
         """
-        1. Save message from bot to queue
-        2. save last message id
+        Save item to queue
+        Save last update id
         """
-        self.db.query(
+        super().save()
+        self.options.last_update_id = str(self.external_id)
+
+    @classmethod
+    def get_packet(cls, size=10):
+        """
+        Get <size> updates with status=new
+        """
+        db = DB()
+        recs = db.select(
             """
-            INSERT INTO "Queue" (
-                "user_id", "body", "status"
-            ) VALUES (?, ?, ?)
+            SELECT "id", "body"
+            FROM "Queue"
+            WHERE "status" = ?
+            ORDER BY "id"
+            LIMIT ?
             """,
-            self.user.pk,
-            json.dumps(self.data, ensure_ascii=False),
-            self.STATUS_NEW,
+            cls.STATUS_NEW,
+            size,
         )
+        for rec in recs:
+            data = json.loads(rec[1])
+            update = cls(
+                data=data,
+                pk=rec[0]
+            )
+            yield update

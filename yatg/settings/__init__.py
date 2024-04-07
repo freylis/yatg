@@ -40,6 +40,13 @@ class Settings:
         """
         return self._get_tgbot_option('api_url')
 
+    @property
+    def tgbot_plugins(self):
+        """
+        Get paths to plugins
+        """
+        return self._get_tgbot_option('plugins')
+
     def get_option(self, *keys):
         """
         Get option by path
