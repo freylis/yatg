@@ -2,6 +2,7 @@ import datetime
 import json
 
 from yatg.storage import DB
+from yatg.tg_bot.bot import TgBot
 
 
 class Plugin:

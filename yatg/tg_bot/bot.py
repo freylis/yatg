@@ -41,6 +41,18 @@ class TgBot:
         settings = Settings()
         return cls(token=settings.tgbot_token, bot_name=settings.tgbot_name)
 
+    def send_message(self, text, chat_id):
+        """
+        Отправка сообщения от бота к пользователю
+        """
+        self.command(
+            action='sendMessage',
+            params={
+                'chat_id': chat_id,
+                'text': text,
+            }
+        )
+
     def command(self, action, params=None):
         """
         Execute `action` command in telegram

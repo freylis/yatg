@@ -17,6 +17,10 @@ class Update(Queue):
         return str(self.data['update_id'])
 
     @property
+    def chat_id(self):
+        return self.data['chat']['id']
+
+    @property
     def command_text(self):
         return self.data['message']['text']
 

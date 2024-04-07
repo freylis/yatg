@@ -16,5 +16,8 @@ def get_updates():
         upd.save()
 
 
-def send_message():
-    pass
+def send_message(message):
+    """
+    Отправка сообщения из бота к пользователю
+    """
+
