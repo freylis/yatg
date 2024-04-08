@@ -1,8 +1,10 @@
 import json
+import functools
 
 from yatg.storage.db import DB
 from yatg.storage import Options
 from yatg.storage.users import User
+from yatg.utils import logger
 
 
 class Queue:
@@ -18,6 +20,9 @@ class Queue:
         self.db = DB()
         self.options = Options()
 
+    def __str__(self):
+        return f'<Q: ct:{self.CONTENT_TYPE} id:{self.pk}>'
+
     @property
     def external_id(self):
         raise NotImplementedError()
@@ -26,10 +31,13 @@ class Queue:
     def username(self):
         return self.data['message']['chat']['username']
 
-    @property
+    @functools.cached_property
     def user(self):
         user = User(self.username)
         return user
+
+    def execute(self):
+        raise NotImplementedError()
 
     def save(self):
         """
@@ -64,3 +72,47 @@ class Queue:
             json.dumps(self.data, ensure_ascii=False),
             self.STATUS_NEW,
         )
+
+    def complete(self, status=None):
+        if not self.pk:
+            return
+        status = status if status is not None else self.STATUS_DONE
+        logger.debug(f'Задача {self} завершается со статусом {status}')
+
+        self.db.query(
+            """
+            UPDATE "Queue"
+            SET "status" = ?
+            WHERE "id" = ?
+            """,
+            status,
+            self.pk,
+        )
+
+    @classmethod
+    def get_packet(cls, size=10):
+        """
+        Get <size> updates with status=new
+        """
+        db = DB()
+        recs = db.select(
+            """
+            SELECT "id", "body"
+            FROM "Queue"
+            WHERE
+                "status" = ?
+                AND "content_type" = ?
+            ORDER BY "id"
+            LIMIT ?
+            """,
+            cls.STATUS_NEW,
+            cls.CONTENT_TYPE,
+            size,
+        )
+        for rec in recs:
+            data = json.loads(rec[1])
+            update = cls(
+                data=data,
+                pk=rec[0]
+            )
+            yield update

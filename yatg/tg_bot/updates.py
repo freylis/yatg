@@ -1,7 +1,9 @@
-import json
+import datetime
+import uuid
 
-from yatg.storage import DB
 from yatg.utils import logger
+from yatg.utils import requester
+from yatg.settings import Settings
 from yatg.tg_bot import plugins
 from yatg.tg_bot.queue import Queue
 
@@ -29,9 +31,32 @@ class Update(Queue):
         Execute this update
         """
         logger.info(f'Execute command {self.command_text!r}')
-        plugin_cls = plugins.get_plugin(self.command_text)
+
+        current_plugin_name = self.user.plugin.name
+        logger.debug(
+            f'Found active plugin {current_plugin_name!r}' if current_plugin_name else
+            'Not found active plugin'
+        )
+        plugin_cls = plugins.get_plugin(current_plugin_name or self.command_text)
         plugin = plugin_cls()
-        plugin.activate(self)
+        plugin.activate(self.user)
+
+        # если команда является активацией плагина, завершим работу
+        if plugin.is_activate_plugin_command(self.command_text):
+            MessageToUser.answer_for_update(
+                message=f'Активирована утилита {plugin.title}',
+                update=self,
+            )
+            self.complete()
+            return
+
+        # в найденном плагине ищем команду
+        if not plugin.is_my_command(self.command_text):
+            MessageToUser.answer_for_update(
+                message=f'Команда {self.command_text!r} не найдена в утилите {plugin.title}',
+                update=self,
+            )
+            return
 
     def save(self):
         """
@@ -41,27 +66,48 @@ class Update(Queue):
         super().save()
         self.options.last_update_id = str(self.external_id)
 
+
+class MessageToUser(Queue):
+    CONTENT_TYPE = 2
+
+    def __init__(self, data, pk=None):
+        super().__init__(data, pk=pk)
+        self.settings = Settings()
+
+    def execute(self):
+        action = 'sendMessage'
+        params = {
+            'chat_id': self.chat_id,
+            'text': self.text,
+        }
+        full_url = f'{self.settings.tgbot_url}bot{self.settings.tgbot_token}/{action}'
+        requester.get(full_url, params=params)
+        self.complete()
+
+    @property
+    def chat_id(self):
+        return self.data['message']['chat']['id']
+
+    @property
+    def text(self):
+        return self.data['message']['text']
+
+    @property
+    def external_id(self):
+        return self.data['update_id']
+
     @classmethod
-    def get_packet(cls, size=10):
+    def answer_for_update(cls, message, update):
         """
-        Get <size> updates with status=new
+        Инициализируем отправку сообщения пользователю на основе ранее отправленного сообщения
         """
-        db = DB()
-        recs = db.select(
-            """
-            SELECT "id", "body"
-            FROM "Queue"
-            WHERE "status" = ?
-            ORDER BY "id"
-            LIMIT ?
-            """,
-            cls.STATUS_NEW,
-            size,
-        )
-        for rec in recs:
-            data = json.loads(rec[1])
-            update = cls(
-                data=data,
-                pk=rec[0]
-            )
-            yield update
+        data = {
+            "update_id": str(uuid.uuid4()),
+            "message": {
+                "chat": update.data['message']['chat'],
+                "date": datetime.datetime.now().timestamp(),
+                "text": message,
+            },
+        }
+        msg = cls(data)
+        msg.save()

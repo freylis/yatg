@@ -6,3 +6,7 @@ class PluginError(Exception):
 
 class PluginImportError(PluginError):
     pass
+
+
+class PluginCommandError(PluginError):
+    pass

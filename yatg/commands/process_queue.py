@@ -4,6 +4,7 @@ Command for getting updates from tg to db
 from yatg.commands.base import Command
 
 from yatg.tg_bot.updates import Update
+from yatg.tg_bot.updates import MessageToUser
 
 
 class ProcessQueueCommand(Command):
@@ -13,9 +14,10 @@ class ProcessQueueCommand(Command):
         1. get N-new items from queue
         2. Execute each command
         """
-        updates_packet = Update.get_packet()
-        for update in updates_packet:
-            update.execute()
+        for cls in [Update, MessageToUser]:
+            queue = cls.get_packet()
+            for q_item in queue:
+                q_item.execute()
 
 
 if __name__ == '__main__':

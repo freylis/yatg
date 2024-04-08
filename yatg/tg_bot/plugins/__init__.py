@@ -25,7 +25,7 @@ def get_plugin(command):
 
     current_plugin = None
     for plugin in plugins.values():
-        if plugin.is_current_plugin(command):
+        if plugin.is_activate_plugin_command(command):
             current_plugin = plugin
             break
 
