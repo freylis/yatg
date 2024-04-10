@@ -47,6 +47,14 @@ class Settings:
         """
         return self._get_tgbot_option('plugins')
 
+    @property
+    def logger_config(self):
+        """
+        Get logger config
+        """
+        dct = self.get_option('logger')
+        return dct
+
     def get_option(self, *keys):
         """
         Get option by path

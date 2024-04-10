@@ -1,7 +1,10 @@
+import logging
 import sqlite3
 
 from yatg.settings import Settings
-from yatg.utils import logger
+
+
+logger = logging.getLogger('yatg')
 
 
 class DB:

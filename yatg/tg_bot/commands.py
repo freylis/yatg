@@ -2,7 +2,8 @@ import logging
 
 from yatg.tg_bot.bot import TgBot
 
-logger = logging.getLogger('yatg')
+
+logger = logging.Logger('yatg')
 
 
 def get_updates():

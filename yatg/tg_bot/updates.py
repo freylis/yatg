@@ -1,11 +1,14 @@
-import datetime
 import uuid
+import logging
+import datetime
 
-from yatg.utils import logger
 from yatg.utils import requester
 from yatg.settings import Settings
 from yatg.tg_bot import plugins
 from yatg.tg_bot.queue import Queue
+
+
+logger = logging.getLogger('yatg')
 
 
 class Update(Queue):
@@ -56,6 +59,7 @@ class Update(Queue):
                 message=f'Команда {self.command_text!r} не найдена в утилите {plugin.title}',
                 update=self,
             )
+            self.complete_with_error(f'Unknown command {self.command_text!r} for plugin={plugin.NAME}')
             return
 
     def save(self):

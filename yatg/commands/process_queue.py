@@ -1,8 +1,9 @@
 """
 Command for getting updates from tg to db
 """
-from yatg.commands.base import Command
+import time
 
+from yatg.commands.base import Command
 from yatg.tg_bot.updates import Update
 from yatg.tg_bot.updates import MessageToUser
 
@@ -22,4 +23,11 @@ class ProcessQueueCommand(Command):
 
 if __name__ == '__main__':
     command = ProcessQueueCommand()
-    command.execute()
+    while True:
+        try:
+            command.execute()
+        except KeyboardInterrupt:
+            logger.warning(f'Stop command {command}')
+            break
+
+        time.sleep(1)

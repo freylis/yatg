@@ -1,11 +1,14 @@
+import logging
 import functools
 import importlib
 
-from yatg.utils import logger
 from yatg.settings import Settings
 from yatg.tg_bot.plugins.yadisk import YandexDiskPlugin
 from yatg.tg_bot.plugins.notes import NotesPlugin
 from yatg.tg_bot.plugins import errors
+
+
+logger = logging.getLogger('yatg')
 
 
 def get_plugin(command):

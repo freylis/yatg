@@ -1,10 +1,13 @@
 import json
+import logging
 import functools
 
 from yatg.storage.db import DB
 from yatg.storage import Options
 from yatg.storage.users import User
-from yatg.utils import logger
+
+
+logger = logging.getLogger('yatg')
 
 
 class Queue:
@@ -88,6 +91,10 @@ class Queue:
             status,
             self.pk,
         )
+
+    def complete_with_error(self, error):
+        logger.error(error)
+        self.complete(status=self.STATUS_ERROR)
 
     @classmethod
     def get_packet(cls, size=10):
